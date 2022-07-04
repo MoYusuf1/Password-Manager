@@ -2,6 +2,30 @@ from tkinter import *
 from tkinter import messagebox
 import random
 import pyperclip
+import json
+
+
+# ------------------------------SEARCH FEATURE------------------------------------#
+def search():
+    # gets the user's entry in the website box
+    website = website_entry.get()
+
+    # opens the JSON data file
+    with open("password_data.json", "r") as data_file:
+        # reads the file and stores the data into a variable
+        value = json.load(data_file)
+
+        # searches for the user's entry inside the JSON database
+        if website in value:
+            # searches for and assigns the user's information into it's respective variable
+            website_username = value[website]["email"]
+            website_password = value[website]["password"]
+            # prompts the user their information in a clean easy to read way
+            messagebox.showinfo(title="User Information",
+                                message=f"Username: {website_username}\n Password: {website_password}")
+        else:
+            # if the requested website's information isn't available the program tells the user
+            messagebox.showinfo(message="The information for this website is not in record")
 
 
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
@@ -50,7 +74,12 @@ def save():
     website = website_entry.get()
     email = email_entry.get()
     password = password_entry.get()
-
+    new_data = {
+        website: {
+            "email": email,
+            "password": password
+        }
+    }
     # if the user is not satisfied with their entry then it will not save.
     # If they are then it will tell them their data had been saved.
 
@@ -62,10 +91,24 @@ def save():
 
         # this chunk of code retains then user's information if they're not happy with their initial input
         if is_ok:
-            with open("password_data.txt", "a") as data_file:
-                data_file.write(f"\n---------\nWebsite: {website}\nEmail: {email}\nPassword: {password}")
-                website_entry.delete(0, END)
-                password_entry.delete(0, END)
+            try:
+                with open("password_data.json", "r") as data_file:
+
+                    # Reading the old data
+                    data = json.load(data_file)
+                    # Updating old data with new data
+
+            except FileNotFoundError:
+                with open("password_data.json", "w") as data_file:
+                    json.dump(new_data, data_file, indent=4)
+
+            else:
+                data.update(new_data)
+
+                with open("password_data.json", "w") as data_file:
+                    # Saving updated data
+                    json.dump(data, data_file, indent=4)
+
             # this informs the user that everything went smoothly
             messagebox.showinfo(message="Your information has been saved!")
 
@@ -108,18 +151,19 @@ password_label.grid(row=3, column=0)
 # ______________
 
 # adds the website label corresponding entry box
-website_entry = Entry(width=35)
+website_entry = Entry(width=33)
 
-website_entry.grid(row=1, column=1, columnspan=3, sticky="EW")
+website_entry.grid(row=1, column=1)
 
 # makes the cursor focus on this entry box on start up
 website_entry.focus()
 
 # adds the email/username label corresponding entry box
-email_entry = Entry(width=35)
+email_entry = Entry(width=33)
 
 email_entry.insert(0, "sample@email.com")
-email_entry.grid(row=2, column=1, columnspan=3, sticky="EW")
+
+email_entry.grid(row=2, column=1, columnspan=2, sticky="EW")
 
 # adds the password label corresponding entry box
 password_entry = Entry(width=33)
@@ -128,10 +172,15 @@ password_entry.grid(row=3, column=1)
 
 # ______________
 
-# adds a "generate password" button
+# adds a "generate password" button and assign's the function password_generator() to it
 password_button = Button(text="Generate Password", fg="Black", command=password_generator)
 
 password_button.grid(row=3, column=2)
+
+# adds a "search" button and assign's the function search() to it
+search_button = Button(text="Search", fg="Black", command=search)
+
+search_button.grid(row=1, column=2, sticky=EW)
 
 # adds the "Add" button
 
